@@ -1,0 +1,120 @@
+import mindustry.ui.dialogs.BaseDialog;
+import mindustry.Vars;
+import arc.scene.ui.layout.Table;
+import arc.scene.ui.TextButton;
+import arc.scene.ui.CheckBox;
+import arc.scene.ui.SelectBox;
+import java.util.*;
+import java.io.*;
+import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
+
+public class CheatUI {
+    private static boolean godMode = false;
+    private static boolean instantBuild = false;
+
+    private static Map<String, Map<String, Boolean>> profiles = new HashMap<>();
+    private static SelectBox<String> profileSelector = new SelectBox<>();
+    private static Gson gson = new Gson();
+
+    public static void loadUI() {
+        BaseDialog cheatDialog = new BaseDialog("Cheats con Temporadas y Eventos");
+
+        Table tabs = new Table();
+        Table content = new Table();
+
+        TextButton profilesTab = new TextButton("Perfiles");
+        profilesTab.clicked(() -> {
+            content.clear();
+            buildProfiles(content);
+        });
+
+        TextButton seasonTab = new TextButton("Temporadas");
+        seasonTab.clicked(() -> {
+            content.clear();
+            buildSeason(content);
+        });
+
+        TextButton eventsTab = new TextButton("Eventos");
+        eventsTab.clicked(() -> {
+            content.clear();
+            buildEvents(content);
+        });
+
+        tabs.add(profilesTab).pad(5f);
+        tabs.add(seasonTab).pad(5f);
+        tabs.add(eventsTab).pad(5f);
+        tabs.row();
+
+        buildProfiles(content);
+
+        cheatDialog.cont.add(tabs).row();
+        cheatDialog.cont.add(content).grow().row();
+
+        cheatDialog.addCloseButton();
+        cheatDialog.show();
+    }
+
+    // Gestión de perfiles
+    private static void buildProfiles(Table t){
+        profileSelector.setItems(profiles.keySet().toArray(new String[0]));
+        t.add(profileSelector).pad(5f).row();
+
+        TextButton saveButton = new TextButton("Guardar Perfil");
+        saveButton.clicked(() -> {
+            String name = "Perfil_" + System.currentTimeMillis();
+            Map<String, Boolean> current = new HashMap<>();
+            current.put("godMode", godMode);
+            current.put("instantBuild", instantBuild);
+            profiles.put(name, current);
+            profileSelector.setItems(profiles.keySet().toArray(new String[0]));
+            Vars.ui.showInfoToast("Perfil guardado: " + name, 3f);
+        });
+        t.add(saveButton).size(220f, 50f).pad(5f).row();
+
+        TextButton exportButton = new TextButton("Exportar Perfiles");
+        exportButton.clicked(() -> {
+            try (Writer writer = new FileWriter("cheat_profiles.json")) {
+                gson.toJson(profiles, writer);
+                Vars.ui.showInfoToast("Perfiles exportados a cheat_profiles.json", 3f);
+            } catch (IOException e) {
+                Vars.ui.showInfoToast("Error al exportar perfiles", 3f);
+            }
+        });
+        t.add(exportButton).size(220f, 50f).pad(5f).row();
+
+        TextButton importButton = new TextButton("Importar Perfiles");
+        importButton.clicked(() -> {
+            try (Reader reader = new FileReader("cheat_profiles.json")) {
+                profiles = gson.fromJson(reader, new TypeToken<Map<String, Map<String, Boolean>>>(){}.getType());
+                profileSelector.setItems(profiles.keySet().toArray(new String[0]));
+                Vars.ui.showInfoToast("Perfiles importados desde cheat_profiles.json", 3f);
+            } catch (IOException e) {
+                Vars.ui.showInfoToast("Error al importar perfiles", 3f);
+            }
+        });
+        t.add(importButton).size(220f, 50f).pad(5f).row();
+    }
+
+    // Temporadas
+    private static void buildSeason(Table t){
+        TextButton currentSeason = new TextButton("Ver Temporada Actual");
+        currentSeason.clicked(() -> Vars.ui.showInfoToast("Temporada Abril 2026 en curso", 3f));
+        t.add(currentSeason).size(220f, 50f).pad(5f).row();
+
+        TextButton endSeason = new TextButton("Cerrar Temporada");
+        endSeason.clicked(() -> Vars.ui.showInfoToast("Temporada cerrada. Campeones guardados.", 3f));
+        t.add(endSeason).size(220f, 50f).pad(5f).row();
+    }
+
+    // Eventos temáticos
+    private static void buildEvents(Table t){
+        TextButton sandboxEvent = new TextButton("Evento Sandbox");
+        sandboxEvent.clicked(() -> Vars.ui.showInfoToast("Evento Sandbox activo: recursos infinitos + God Mode", 3f));
+        t.add(sandboxEvent).size(220f, 50f).pad(5f).row();
+
+        TextButton speedrunEvent = new TextButton("Evento Speedrun");
+        speedrunEvent.clicked(() -> Vars.ui.showInfoToast("Evento Speedrun activo: construcción instantánea + unlock all", 3f));
+        t.add(speedrunEvent).size(220f, 50f).pad(5f).row();
+    }
+}
